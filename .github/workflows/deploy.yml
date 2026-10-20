@@ -6,7 +6,7 @@ on:
   pull_request:
 
 env:
-  NAMESPACE: team10
+  NAMESPACE: alumno-team10
 
 jobs:
   test:
