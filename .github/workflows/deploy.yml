@@ -46,9 +46,8 @@ jobs:
         run: |
           echo "${{ secrets.KUBECONFIG }}" > kubeconfig
           export KUBECONFIG=kubeconfig
-          kubectl create secret generic cafeteria-db -n $NAMESPACE \
-            --from-literal=password="${{ secrets.DB_PASSWORD }}" \
-            --dry-run=client -o yaml | kubectl apply -f -
+          kubectl auth can-i --list -n $NAMESPACE
           sed -i "s|IMAGEN|$IMAGEN|" k8s/app.yaml
+          sed -i "s|DB_PASSWORD_VALOR|${{ secrets.DB_PASSWORD }}|" k8s/app.yaml k8s/postgres.yaml
           kubectl apply -n $NAMESPACE -f k8s/
           kubectl rollout status -n $NAMESPACE deployment/cafeteria --timeout=180s
