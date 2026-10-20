@@ -1,0 +1,17 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: cafeteria
+      POSTGRES_PASSWORD: cafeteria
+      POSTGRES_DB: cafeteria
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: db
+      CUTOFF_MINUTES: "10"
+      RECREOS: "10:15,12:00,15:30,22:30"
+    depends_on:
+      - db

@@ -1,0 +1,54 @@
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  NAMESPACE: team10
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npm test
+
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build y push
+        run: |
+          IMAGEN=ghcr.io/${GITHUB_REPOSITORY,,}:$GITHUB_SHA
+          docker build -t $IMAGEN .
+          docker push $IMAGEN
+          echo "IMAGEN=$IMAGEN" >> $GITHUB_ENV
+
+      - name: Deploy
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" > kubeconfig
+          export KUBECONFIG=kubeconfig
+          kubectl create secret generic cafeteria-db -n $NAMESPACE \
+            --from-literal=password="${{ secrets.DB_PASSWORD }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+          sed -i "s|IMAGEN|$IMAGEN|" k8s/app.yaml
+          kubectl apply -n $NAMESPACE -f k8s/
+          kubectl rollout status -n $NAMESPACE deployment/cafeteria --timeout=180s

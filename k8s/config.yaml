@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cafeteria-config
+data:
+  cutoff_minutes: "10"
+  recreos: "10:15,12:00,15:30"

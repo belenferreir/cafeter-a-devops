@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cafeteria
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cafeteria
+  template:
+    metadata:
+      labels:
+        app: cafeteria
+    spec:
+      containers:
+        - name: cafeteria
+          image: IMAGEN
+          ports:
+            - containerPort: 3000
+          env:
+            - name: DB_HOST
+              value: postgres
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cafeteria-db
+                  key: password
+          volumeMounts:
+            - name: config
+              mountPath: /etc/cafeteria
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 30
+      volumes:
+        - name: config
+          configMap:
+            name: cafeteria-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cafeteria
+spec:
+  selector:
+    app: cafeteria
+  ports:
+    - port: 80
+      targetPort: 3000

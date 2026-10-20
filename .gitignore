@@ -1,0 +1,4 @@
+node_modules
+.env
+kubeconfig
+*.yaml.local
